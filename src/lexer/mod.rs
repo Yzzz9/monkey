@@ -1,6 +1,6 @@
 //use crate::token::{Token, TokenType};
-mod lexer {
-    use crate::token::token::{self, Token, TokenType};
+pub mod lexer {
+    use crate::token::token::{Token, TokenType};
 
     #[derive(Debug)]
     pub struct Lexer {
@@ -51,71 +51,68 @@ mod lexer {
                 }
             }
         }
+        fn peek_char(&self) -> u8 {
+            if self.read_position >= self.input.len() {
+                return b'\0';
+            }
+            self.input[self.read_position] as u8
+        }
         pub fn next_token(&mut self) -> Token {
             self.skip_whitespace();
             let return_token = match self.ch {
-                b'=' => new_token(
-                    TokenType(token::ASSIGN.to_string()),
-                    (self.ch as char).to_string(),
-                ),
-                b'(' => new_token(
-                    TokenType(token::LPARAN.to_string()),
-                    (self.ch as char).to_string(),
-                ),
-                b')' => new_token(
-                    TokenType(token::RPARAN.to_string()),
-                    (self.ch as char).to_string(),
-                ),
-                b'{' => new_token(
-                    TokenType(token::LBRACE.to_string()),
-                    (self.ch as char).to_string(),
-                ),
-                b'}' => new_token(
-                    TokenType(token::RBRACE.to_string()),
-                    (self.ch as char).to_string(),
-                ),
-                b',' => new_token(
-                    TokenType(token::COMMA.to_string()),
-                    (self.ch as char).to_string(),
-                ),
-                b';' => new_token(
-                    TokenType(token::SEMICOLON.to_string()),
-                    (self.ch as char).to_string(),
-                ),
-                b'+' => new_token(
-                    TokenType(token::PLUS.to_string()),
-                    (self.ch as char).to_string(),
-                ),
-                b'\0' => new_token(
-                    TokenType(token::EOF.to_string()),
-                    (self.ch as char).to_string(),
-                ),
+                b'=' => {
+                    if self.peek_char() == b'=' {
+                        let next_ch = self.ch;
+                        self.read_char();
+                        Token::new(
+                            TokenType::EQ,
+                            format!("{}{}", next_ch as char, self.ch as char),
+                        )
+                    } else {
+                        Token::new(TokenType::ASSIGN, (self.ch as char).to_string())
+                    }
+                }
+                b'(' => Token::new(TokenType::LPARAN, (self.ch as char).to_string()),
+                b')' => Token::new(TokenType::RPARAN, (self.ch as char).to_string()),
+                b'{' => Token::new(TokenType::LBRACE, (self.ch as char).to_string()),
+                b'}' => Token::new(TokenType::RBRACE, (self.ch as char).to_string()),
+                b',' => Token::new(TokenType::COMMA, (self.ch as char).to_string()),
+                b';' => Token::new(TokenType::SEMICOLON, (self.ch as char).to_string()),
+                b'+' => Token::new(TokenType::PLUS, (self.ch as char).to_string()),
+                b'-' => Token::new(TokenType::MINUS, (self.ch as char).to_string()),
+                b'*' => Token::new(TokenType::ASTERISK, (self.ch as char).to_string()),
+                b'/' => Token::new(TokenType::SLASH, (self.ch as char).to_string()),
+                b'!' => {
+                    if self.peek_char() == b'=' {
+                        let next_ch = self.ch;
+                        self.read_char();
+                        Token::new(
+                            TokenType::NOTEQ,
+                            format!("{}{}", next_ch as char, self.ch as char),
+                        )
+                    } else {
+                        Token::new(TokenType::BANG, (self.ch as char).to_string())
+                    }
+                }
+                b'<' => Token::new(TokenType::LT, (self.ch as char).to_string()),
+                b'>' => Token::new(TokenType::GT, (self.ch as char).to_string()),
+                b'\0' => Token::new(TokenType::EOF, (self.ch as char).to_string()),
                 _ => {
                     if is_letter(self.ch) {
                         let literal = self.read_identifier();
-                        let token_type = TokenType(lookup_ident(&literal));
-                        new_token(token_type, literal)
+                        let token_type = lookup_ident(&literal);
+                        return Token::new(token_type, literal);
                     } else if is_digit(self.ch) {
-                        let token_type = TokenType(token::INT.to_string());
+                        let token_type = TokenType::INT;
                         let literal = self.read_number();
-                        new_token(token_type, literal)
+                        return Token::new(token_type, literal);
                     } else {
-                        new_token(
-                            TokenType(token::ILLEGAL.to_string()),
-                            (self.ch as char).to_string(),
-                        )
+                        Token::new(TokenType::ILLEGAL, (self.ch as char).to_string())
                     }
                 }
             };
             self.read_char();
             return_token
-        }
-    }
-
-    fn new_token(token: TokenType, literal: String) -> Token {
-        Token {
-            token_type: token,
-            literal,
         }
     }
 
@@ -127,11 +124,16 @@ mod lexer {
         b'0' <= ch && ch <= b'9'
     }
 
-    fn lookup_ident(s: &str) -> String {
+    fn lookup_ident(s: &str) -> TokenType {
         match s {
-            "let" => token::LET.to_string(),
-            "fun" => token::FUNCTION.to_string(),
-            _ => token::IDENT.to_string(),
+            "let" => TokenType::LET,
+            "fn" => TokenType::FUNCTION,
+            "if" => TokenType::IF,
+            "else" => TokenType::ELSE,
+            "return" => TokenType::RETURN,
+            "true" => TokenType::TRUE,
+            "false" => TokenType::FALSE,
+            _ => TokenType::IDENT,
         }
     }
 }
@@ -140,7 +142,6 @@ mod lexer {
 mod tests {
     use crate::lexer::lexer::Lexer;
     use crate::token::token::{Token, TokenType};
-    use crate::token::*;
 
     #[test]
     fn add_test() {
@@ -152,15 +153,15 @@ mod tests {
         let input = "=+(){},;".to_string();
         let mut lexer = Lexer::new(input);
         let tests = vec![
-            Token::new(TokenType(token::ASSIGN.to_string()), "=".to_string()),
-            Token::new(TokenType(token::PLUS.to_string()), "+".to_string()),
-            Token::new(TokenType(token::LPARAN.to_string()), "(".to_string()),
-            Token::new(TokenType(token::RPARAN.to_string()), ")".to_string()),
-            Token::new(TokenType(token::LBRACE.to_string()), "{".to_string()),
-            Token::new(TokenType(token::RBRACE.to_string()), "}".to_string()),
-            Token::new(TokenType(token::COMMA.to_string()), ",".to_string()),
-            Token::new(TokenType(token::SEMICOLON.to_string()), ";".to_string()),
-            Token::new(TokenType(token::EOF.to_string()), "\0".to_string()),
+            Token::new(TokenType::ASSIGN, "=".to_string()),
+            Token::new(TokenType::PLUS, "+".to_string()),
+            Token::new(TokenType::LPARAN, "(".to_string()),
+            Token::new(TokenType::RPARAN, ")".to_string()),
+            Token::new(TokenType::LBRACE, "{".to_string()),
+            Token::new(TokenType::RBRACE, "}".to_string()),
+            Token::new(TokenType::COMMA, ",".to_string()),
+            Token::new(TokenType::SEMICOLON, ";".to_string()),
+            Token::new(TokenType::EOF, "\0".to_string()),
         ];
         for test in tests {
             assert_eq!(test, lexer.next_token());

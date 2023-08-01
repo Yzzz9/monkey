@@ -1,13 +1,9 @@
 pub mod token {
     #[derive(Debug, PartialEq)]
-    pub struct TokenType(pub String);
-
-    #[derive(Debug, PartialEq)]
     pub struct Token {
         pub token_type: TokenType,
         pub literal: String,
     }
-
     impl Token {
         pub fn new(token_type: TokenType, literal: String) -> Token {
             Token {
@@ -17,27 +13,44 @@ pub mod token {
         }
     }
 
-    pub const ILLEGAL: &str = "ILLEGAL";
-    pub const EOF: &str = "EOF";
+    #[allow(dead_code)]
+    #[derive(Debug, PartialEq)]
+    pub enum TokenType {
+        ILLEGAL,
+        EOF,
 
-    // identifiers + literals
-    pub const IDENT: &str = "IDENT"; // add, foobar, x, y, ...
-    pub const INT: &str = "INT"; // 12345
+        // identifiers + literals
+        IDENT, // add, foobar, x, y, ...
+        INT,   // 12345
 
-    // Operators
-    pub const ASSIGN: &str = "=";
-    pub const PLUS: &str = "+";
+        // Operators
+        BANG,
+        ASSIGN,
+        PLUS,
+        MINUS,
+        ASTERISK,
+        SLASH,
+        EQ,
+        NOTEQ,
+        LT,
+        GT,
 
-    // Delimiters
-    pub const COMMA: &str = ",";
-    pub const SEMICOLON: &str = ";";
+        // Delimiters
+        COMMA,
+        SEMICOLON,
 
-    pub const LPARAN: &str = "(";
-    pub const RPARAN: &str = ")";
-    pub const LBRACE: &str = "{";
-    pub const RBRACE: &str = "}";
+        LPARAN,
+        RPARAN,
+        LBRACE,
+        RBRACE,
 
-    // Keywords
-    pub const FUNCTION: &str = "FUNCTION";
-    pub const LET: &str = "LET";
+        // Keywords
+        FUNCTION,
+        LET,
+        TRUE,
+        FALSE,
+        IF,
+        ELSE,
+        RETURN,
+    }
 }
