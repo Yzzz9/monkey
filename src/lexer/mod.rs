@@ -144,12 +144,7 @@ mod tests {
     use crate::token::token::{Token, TokenType};
 
     #[test]
-    fn add_test() {
-        assert_eq!(2, 1 + 1);
-    }
-
-    #[test]
-    fn basic_test() {
+    fn lexer_basic_test() {
         let input = "=+(){},;".to_string();
         let mut lexer = Lexer::new(input);
         let tests = vec![

@@ -1,5 +1,5 @@
 pub mod token {
-    #[derive(Debug, PartialEq)]
+    #[derive(Debug, PartialEq, Clone)]
     pub struct Token {
         pub token_type: TokenType,
         pub literal: String,
@@ -14,7 +14,7 @@ pub mod token {
     }
 
     #[allow(dead_code)]
-    #[derive(Debug, PartialEq)]
+    #[derive(Debug, PartialEq, Copy, Clone)]
     pub enum TokenType {
         ILLEGAL,
         EOF,
