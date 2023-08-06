@@ -1,4 +1,4 @@
-use crate::ast::{Identifier, LetStatement, Node, Program};
+use crate::ast::{Identifier, LetStatement, Node, Program, ReturnStatement};
 use crate::lexer::Lexer;
 use crate::token::{Token, TokenType};
 
@@ -40,6 +40,7 @@ impl Parser {
     fn parse_statement(&mut self) -> Option<Box<dyn Node>> {
         match self.curr_token.token_type {
             TokenType::LET => self.parse_let_statement(),
+            TokenType::RETURN => self.parse_return_statement(),
             _ => None,
         }
     }
@@ -69,6 +70,25 @@ impl Parser {
             return None;
         }
 
+        // TODO - We're skipping expression until we encounter a semicolon
+        while !self.curr_token_is(TokenType::SEMICOLON) {
+            self.next_token();
+        }
+
+        Some(Box::new(stmt))
+    }
+    fn parse_return_statement(&mut self) -> Option<Box<dyn Node>> {
+        let stmt = ReturnStatement {
+            token: self.curr_token.clone(),
+            return_value: Box::new(Identifier {
+                token: self.curr_token.clone(),
+                value: "".to_string(),
+            }),
+        };
+
+        self.next_token();
+
+        // TODO - We're skipping expression until we encounter a semicolon
         while !self.curr_token_is(TokenType::SEMICOLON) {
             self.next_token();
         }
@@ -103,12 +123,12 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::{LetStatement, Node};
+    use crate::ast::{LetStatement, Node, ReturnStatement};
     use crate::lexer::Lexer;
     use crate::parser::Parser;
 
     #[test]
-    fn parser_basic_test() {
+    fn parser_let_statement_test() {
         let input = "let x = 5;
         let y = 10;
         let foobar = 8383838;"
@@ -138,7 +158,7 @@ mod tests {
     }
 
     #[test]
-    fn parser_negative_test() {
+    fn parser_negative_let_statement_test() {
         let input = "let x 5;
         let = 10;
         let 8383838;"
@@ -164,6 +184,32 @@ mod tests {
                 ),
                 true
             );
+        }
+    }
+
+    #[test]
+    fn parser_return_statement_test() {
+        let input = "return 5;
+        return 10;
+        return 8383838;"
+            .to_string();
+
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        assert_eq!(check_parse_errors(&parser), false);
+
+        assert_eq!(program.is_some(), true);
+        let program = program.unwrap();
+
+        assert_eq!(program.statements.len(), 3);
+
+        for program_stmt in program.statements.iter() {
+            let stmt = &(*program_stmt)
+                .as_any()
+                .downcast_ref::<ReturnStatement>()
+                .unwrap();
+            assert_eq!(stmt.token_literal(), "return".to_string());
         }
     }
 
