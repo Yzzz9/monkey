@@ -1,4 +1,5 @@
 use crate::lexer::Lexer;
+use crate::parser::*;
 use crate::token::TokenType;
 use std::io::{self, Write};
 
@@ -30,6 +31,8 @@ pub fn start() {
                 }
             }
         }
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
         if quit_loop {
             break;
         }

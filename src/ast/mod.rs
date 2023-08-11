@@ -27,10 +27,82 @@ impl Node for Identifier {
         self
     }
     fn string(&self) -> String {
-        self.value
+        self.value.clone()
     }
 }
 impl Expression for Identifier {
+    fn expression_node(&self) {}
+}
+
+// IntegerLiteral struct
+pub struct IntegerLiteral {
+    pub token: Token,
+    pub value: i64,
+}
+impl Node for IntegerLiteral {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn string(&self) -> String {
+        self.token.literal.clone()
+    }
+}
+impl Expression for IntegerLiteral {
+    fn expression_node(&self) {}
+}
+
+// PrefixExpression struct
+pub struct PrefixExpression {
+    pub token: Token,
+    pub operator: String,
+    pub right: Option<Box<dyn Expression>>,
+}
+impl Node for PrefixExpression {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn string(&self) -> String {
+        format!(
+            "({}{})",
+            self.operator,
+            self.right.as_ref().unwrap().string()
+        )
+    }
+}
+impl Expression for PrefixExpression {
+    fn expression_node(&self) {}
+}
+
+// InfixExpression struct
+pub struct InfixExpression {
+    pub token: Token,
+    pub left: Option<Box<dyn Expression>>,
+    pub operator: String,
+    pub right: Option<Box<dyn Expression>>,
+}
+impl Node for InfixExpression {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn string(&self) -> String {
+        format!(
+            "({} {} {})",
+            self.left.as_ref().unwrap().string(),
+            self.operator,
+            self.right.as_ref().unwrap().string()
+        )
+    }
+}
+impl Expression for InfixExpression {
     fn expression_node(&self) {}
 }
 
@@ -38,7 +110,7 @@ impl Expression for Identifier {
 pub struct LetStatement {
     pub token: Token,
     pub name: Identifier,
-    pub value: Box<dyn Expression>,
+    pub value: Option<Box<dyn Expression>>,
 }
 impl Node for LetStatement {
     fn token_literal(&self) -> String {
@@ -48,7 +120,12 @@ impl Node for LetStatement {
         self
     }
     fn string(&self) -> String {
-        format!("{} {};", self.token_literal(), self.name.string(),)
+        format!(
+            "{} {} = {};",
+            self.token_literal(),
+            self.name.string(),
+            self.value.as_ref().unwrap().string()
+        )
     }
 }
 impl Statement for LetStatement {
@@ -58,7 +135,7 @@ impl Statement for LetStatement {
 // ReturnStatement struct
 pub struct ReturnStatement {
     pub token: Token,
-    pub return_value: Box<dyn Expression>,
+    pub return_value: Option<Box<dyn Expression>>,
 }
 impl Node for ReturnStatement {
     fn token_literal(&self) -> String {
@@ -68,7 +145,11 @@ impl Node for ReturnStatement {
         self
     }
     fn string(&self) -> String {
-        format!("{};", self.token_literal())
+        format!(
+            "{} {};",
+            self.token_literal(),
+            self.return_value.as_ref().unwrap().string()
+        )
     }
 }
 impl Statement for ReturnStatement {
@@ -77,8 +158,8 @@ impl Statement for ReturnStatement {
 
 // ExpressionStatement struct
 pub struct ExpressionStatement {
-    token: Token,
-    expression: Box<dyn Expression>,
+    pub token: Token,
+    pub expression: Option<Box<dyn Expression>>,
 }
 impl Node for ExpressionStatement {
     fn token_literal(&self) -> String {
@@ -88,7 +169,7 @@ impl Node for ExpressionStatement {
         self
     }
     fn string(&self) -> String {
-        format!("{};", self.token_literal())
+        format!("{}", self.expression.as_ref().unwrap().string())
     }
 }
 impl Statement for ExpressionStatement {
@@ -110,7 +191,11 @@ impl Node for Program {
         self
     }
     fn string(&self) -> String {
-        format!(";")
+        let mut return_string = String::new();
+        for stmt in self.statements.iter() {
+            return_string.push_str(&format!("{}", stmt.string()));
+        }
+        return_string
     }
 }
 impl Statement for Program {
