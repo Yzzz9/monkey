@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq, Clone)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub literal: String,
@@ -12,15 +12,17 @@ impl Token {
     }
 }
 
-#[allow(dead_code)]
-#[derive(Debug, PartialEq, Copy, Clone, Eq, Hash)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
 pub enum TokenType {
+    UNKNOWN,
     ILLEGAL,
     EOF,
 
     // identifiers + literals
-    IDENT, // add, foobar, x, y, ...
-    INT,   // 12345
+    IDENT(String), // add, foobar, x, y, ...
+    INT(i32),   // 12345
+    BOOL(bool),
+    STRING(String),
 
     // Operators
     BANG,
@@ -33,15 +35,18 @@ pub enum TokenType {
     NOTEQ,
     LT,
     GT,
+    COLON,
 
     // Delimiters
     COMMA,
     SEMICOLON,
 
-    LPARAN,
+    LPARAN, // (
     RPARAN,
-    LBRACE,
+    LBRACE, // {
     RBRACE,
+    LBRACKET,
+    RBRACKET,
 
     // Keywords
     FUNCTION,

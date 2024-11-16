@@ -1,208 +1,183 @@
 use crate::token::Token;
-use std::any::Any;
+use std::collections::BTreeMap;
 
-pub trait Node {
-    fn token_literal(&self) -> String;
-    fn as_any(&self) -> &dyn Any;
-    fn string(&self) -> String;
-}
-pub trait Statement: Node {
-    fn statement_node(&self);
-}
-pub trait Expression: Node {
-    fn expression_node(&self);
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub enum Node {
+    Program(Program),
+    Statement(Statement),
+    Expression(Expression),
 }
 
-// Identifier struct
-#[derive(Debug)]
-pub struct Identifier {
-    pub token: Token,
-    pub value: String,
-}
-impl Node for Identifier {
-    fn token_literal(&self) -> String {
-        self.token.literal.clone()
-    }
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn string(&self) -> String {
-        self.value.clone()
-    }
-}
-impl Expression for Identifier {
-    fn expression_node(&self) {}
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub struct Program {
+    pub statements: Vec<Statement>,
 }
 
-// IntegerLiteral struct
-pub struct IntegerLiteral {
-    pub token: Token,
-    pub value: i64,
-}
-impl Node for IntegerLiteral {
-    fn token_literal(&self) -> String {
-        self.token.literal.clone()
+impl Program {
+    pub fn token_literal(&self) -> String {
+        if self.statements.len() > 0 {
+            self.statements[0].token_literal()
+        } else {
+            String::new()
+        }
     }
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn string(&self) -> String {
-        self.token.literal.clone()
-    }
-}
-impl Expression for IntegerLiteral {
-    fn expression_node(&self) {}
 }
 
-// PrefixExpression struct
-pub struct PrefixExpression {
-    pub token: Token,
-    pub operator: String,
-    pub right: Option<Box<dyn Expression>>,
-}
-impl Node for PrefixExpression {
-    fn token_literal(&self) -> String {
-        self.token.literal.clone()
-    }
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn string(&self) -> String {
-        format!(
-            "({}{})",
-            self.operator,
-            self.right.as_ref().unwrap().string()
-        )
-    }
-}
-impl Expression for PrefixExpression {
-    fn expression_node(&self) {}
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub enum Statement {
+    Let(LetStatement),
+    Return(ReturnStatement),
+    Expression(ExpressionStatement),
 }
 
-// InfixExpression struct
-pub struct InfixExpression {
-    pub token: Token,
-    pub left: Option<Box<dyn Expression>>,
-    pub operator: String,
-    pub right: Option<Box<dyn Expression>>,
-}
-impl Node for InfixExpression {
-    fn token_literal(&self) -> String {
-        self.token.literal.clone()
+impl Statement {
+    pub fn token_literal(&self) -> String {
+        String::new()
     }
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn string(&self) -> String {
-        format!(
-            "({} {} {})",
-            self.left.as_ref().unwrap().string(),
-            self.operator,
-            self.right.as_ref().unwrap().string()
-        )
-    }
-}
-impl Expression for InfixExpression {
-    fn expression_node(&self) {}
 }
 
-// LetStatement struct
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
 pub struct LetStatement {
     pub token: Token,
-    pub name: Identifier,
-    pub value: Option<Box<dyn Expression>>,
-}
-impl Node for LetStatement {
-    fn token_literal(&self) -> String {
-        self.token.literal.clone()
-    }
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn string(&self) -> String {
-        format!(
-            "{} {} = {};",
-            self.token_literal(),
-            self.name.string(),
-            self.value.as_ref().unwrap().string()
-        )
-    }
-}
-impl Statement for LetStatement {
-    fn statement_node(&self) {}
+    pub identifier: IdentifierExpression,
+    pub value: Expression,
 }
 
-// ReturnStatement struct
+impl LetStatement {
+    pub fn token_literal(&self) -> String {
+        self.token.literal
+    }
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
 pub struct ReturnStatement {
-    pub token: Token,
-    pub return_value: Option<Box<dyn Expression>>,
-}
-impl Node for ReturnStatement {
-    fn token_literal(&self) -> String {
-        self.token.literal.clone()
-    }
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn string(&self) -> String {
-        format!(
-            "{} {};",
-            self.token_literal(),
-            self.return_value.as_ref().unwrap().string()
-        )
-    }
-}
-impl Statement for ReturnStatement {
-    fn statement_node(&self) {}
+    pub value: Expression,
 }
 
-// ExpressionStatement struct
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
 pub struct ExpressionStatement {
-    pub token: Token,
-    pub expression: Option<Box<dyn Expression>>,
-}
-impl Node for ExpressionStatement {
-    fn token_literal(&self) -> String {
-        self.token.literal.clone()
-    }
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn string(&self) -> String {
-        format!("{}", self.expression.as_ref().unwrap().string())
-    }
-}
-impl Statement for ExpressionStatement {
-    fn statement_node(&self) {}
+    pub expr: Expression,
 }
 
-// Program struct
-pub struct Program {
-    pub statements: Vec<Box<dyn Node>>,
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub struct BlockStatement {
+    pub statements: Vec<Statement>,
 }
-impl Node for Program {
-    fn token_literal(&self) -> String {
-        if self.statements.len() > 0 {
-            return (*self.statements[0].token_literal()).to_string();
-        }
-        "".to_string()
-    }
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn string(&self) -> String {
-        let mut return_string = String::new();
-        for stmt in self.statements.iter() {
-            return_string.push_str(&format!("{}", stmt.string()));
-        }
-        return_string
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub enum Expression {
+    Identifier(IdentifierExpression),
+    Integer(IntegerExpression),
+    String(StringExpression),
+    Prefix(PrefixExpression),
+    Infix(InfixExpression),
+    Boolean(BooleanExpression),
+    If(IfExpression),
+    FnLiteral(FnLiteralExpression),
+    ArrayLiteral(ArrayLiteralExpression),
+    HashLiteral(HashLiteralExpression),
+    Call(CallExpression),
+    Index(IndexExpression),
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub struct IdentifierExpression {
+    pub token: Token,
+    pub name: String,
+}
+
+impl IdentifierExpression {
+    pub fn token_literal(&self) -> String {
+        self.token.literal
     }
 }
-impl Statement for Program {
-    fn statement_node(&self) {}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub struct IntegerExpression {
+    pub value: i32,
 }
-impl Program {
-    pub fn new() -> Self {
-        Program { statements: vec![] }
-    }
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub struct StringExpression {
+    pub value: String,
 }
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub struct PrefixExpression {
+    pub operator: Token,
+    pub operand: Box<Expression>,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub struct InfixExpression {
+    pub operator: Token,
+    pub lhs: Box<Expression>,
+    pub rhs: Box<Expression>,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub struct BooleanExpression {
+    pub value: bool,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub struct IfExpression {
+    pub condition: Box<Expression>,
+    pub consequence: BlockStatement,
+    pub alternative: Option<BlockStatement>,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub struct FnLiteralExpression {
+    pub name: String,
+    pub parameters: Vec<IdentifierExpression>,
+    pub body: BlockStatement,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub struct ArrayLiteralExpression {
+    pub elements: Vec<Expression>,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub struct HashLiteralExpression {
+    pub pairs: BTreeMap<Expression, Expression>,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub struct CallExpression {
+    pub function: Box<Expression>,
+    pub arguments: Vec<Expression>,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub struct IndexExpression {
+    pub identifier: Box<Expression>,
+    pub index: Box<Expression>,
+}
+
+/*
+fn fmt_statements(stmts: &[Statement], separator: &str) -> String {
+    stmts
+        .iter()
+        .map(|stmt| stmt.to_string())
+        .collect::<Vec<String>>()
+        .join(separator)
+}
+
+pub fn fmt_identifier_expressions(exprs: &[IdentifierExpression], separator: &str) -> String {
+    exprs
+        .iter()
+        .map(|stmt| stmt.to_string())
+        .collect::<Vec<String>>()
+        .join(separator)
+}
+
+fn fmt_expressions(exprs: &[Expression], separator: &str) -> String {
+    exprs
+        .iter()
+        .map(|stmt| stmt.to_string())
+        .collect::<Vec<String>>()
+        .join(separator)
+}
+*/

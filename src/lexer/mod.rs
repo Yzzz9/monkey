@@ -101,8 +101,8 @@ impl Lexer {
                     let token_type = lookup_ident(&literal);
                     return Token::new(token_type, literal);
                 } else if is_digit(self.ch) {
-                    let token_type = TokenType::INT;
                     let literal = self.read_number();
+                    let token_type = TokenType::INT(literal.parse::<i32>().unwrap());
                     return Token::new(token_type, literal);
                 } else {
                     Token::new(TokenType::ILLEGAL, (self.ch as char).to_string())
@@ -131,6 +131,6 @@ fn lookup_ident(s: &str) -> TokenType {
         "return" => TokenType::RETURN,
         "true" => TokenType::TRUE,
         "false" => TokenType::FALSE,
-        _ => TokenType::IDENT,
+        _ => TokenType::IDENT(String::from(s)),
     }
 }

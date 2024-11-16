@@ -12,6 +12,7 @@ fn parser_let_statement_test() {
 
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
+
     let program = parser.parse_program();
     assert_eq!(check_parse_errors(&parser), false);
 
@@ -25,7 +26,7 @@ fn parser_let_statement_test() {
         let stmt = &program.statements[i];
         assert_eq!(
             test_let_statement(
-                &(*stmt).as_any().downcast_ref::<LetStatement>().unwrap(),
+                stmt,
                 test.clone()
             ),
             true
@@ -374,7 +375,11 @@ fn test_operator_precedence_parsing() {
     }
 }
 
-fn test_let_statement(stmt: &LetStatement, name: String) -> bool {
+fn test_let_statement(stmt: &Statement, name: String) -> bool {
+    match stmt {
+        Let(_) => {},
+        _ => { return false; }
+    }
     if stmt.token_literal() != "let".to_string() {
         return false;
     }
@@ -413,10 +418,10 @@ fn test_identifier(exp: Box<dyn Expression>, value: String) -> bool {
     true
 }
 
-fn test_liteal_expression<T>(exp: Box<dyn Expression>, expected: T) -> bool {
+fn test_literal_expression<T>(exp: Box<dyn Expression>, expected: T) -> bool {
     use std::any::type_name;
     match type_name::<T>() {
-        i64 => test_integer_literal(&exp, expected.parse::<i64>().unwrap()),
+        i64 => test_integer_literal(&exp, expected),
         _ => test_identifier(exp, expected),
     }
 }
